@@ -1,0 +1,30 @@
+---
+- name: Copy .my.cnf file with root password credentials.
+  template:
+    src: "root-my.cnf.j2"
+    dest: "{{ mysql_root_home }}/.my.cnf"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Remove remote root
+  mysql_query:
+    query:
+      - DELETE FROM mysql.user WHERE User='{{ mysql_root_username }}' AND Host NOT IN ('localhost', '127.0.0.1', '::1')
+    login_unix_socket: "{{ mysql_socket | default(omit) }}"
+  when: mysql_remove_remote_root
+
+- name: Remove anonymous users
+  mysql_user:
+    name: ''
+    state: absent
+    host_all: true
+    login_unix_socket: "{{ mysql_socket | default(omit) }}"
+  when: mysql_remove_anonymous_users
+
+- name: Remove test database
+  mysql_db:
+    name: test
+    state: absent
+    login_unix_socket: "{{ mysql_socket | default(omit) }}"
+  when: mysql_remove_test_database

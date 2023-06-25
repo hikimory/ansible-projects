@@ -1,0 +1,15 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: install apache and php packages
+    package:
+      update_cache: yes
+      name:
+        - "{{ apache_package }}"
+        - "{{ php_package }}"
+      state: latest
+
+# when: ansible_distribution == "Ubuntu"

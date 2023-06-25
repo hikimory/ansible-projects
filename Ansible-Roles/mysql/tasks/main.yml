@@ -1,0 +1,33 @@
+---
+- name: MySQL | Install
+  include_tasks: installation.yml
+  tags:
+    - install
+
+- name: MySQL | Configure
+  include_tasks: configure.yml
+  tags:
+    - configure
+
+- name: MySQL | Secure-Installation
+  include_tasks: secure-installation.yml
+  tags:
+    - secure_installation
+    - configure
+
+- name: MySQL | Databases
+  include_tasks: databases.yml
+  tags:
+    - configure
+    - databases
+
+- name: MySQL | Users
+  include_tasks: users.yml
+  tags:
+    - configure
+    - users
+
+- name: MySQL | Replication
+  include_tasks: replication.yml
+  tags:
+    - service

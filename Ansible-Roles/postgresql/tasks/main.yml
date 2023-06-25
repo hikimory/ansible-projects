@@ -1,0 +1,44 @@
+---
+- name: PostgreSQL | Install
+  include_tasks: install.yml
+  tags:
+    - install
+
+- name: PostgreSQL | Initialize
+  include_tasks: initialize.yml
+  tags:
+    - initialization
+
+- name: PostgreSQL | Configure
+  include_tasks: configure.yml
+  tags:
+    - configure
+
+- name: Ensure PostgreSQL is started and enabled on boot.
+  service:
+    name: "{{ postgresql_daemon }}"
+    state: "{{ postgresql_service_state }}"
+    enabled: "{{ postgresql_service_enabled }}"
+
+- name: PostgreSQL | Users
+  include_tasks: users.yml
+  tags:
+    - configure
+    - users
+
+- name: PostgreSQL | Databases
+  include_tasks: databases.yml
+  tags:
+    - configure
+    - databases
+
+- name: PostgreSQL | Privilges
+  include_tasks: privileges.yml
+  tags:
+    - configure
+    - privileges
+
+- name: Restart PostgreSQL service
+  service:
+    name: "{{ postgresql_daemon }}"
+    state: restarted

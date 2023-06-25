@@ -1,0 +1,13 @@
+---
+
+- name: Update repository index (RedHat)
+  tags: always
+  dnf:
+    update_only: yes
+  changed_when: false
+
+- name: Ensure MySQL packages are installed.
+  dnf:
+    name: "{{ mysql_packages }}"
+    state: present
+  register: rh_mysql_install_packages
