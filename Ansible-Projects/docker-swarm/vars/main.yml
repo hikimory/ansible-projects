@@ -1,0 +1,4 @@
+---
+swarm_manager_interface: eth0
+domain: app.w1d1.com
+traefik_version: 1.7.3

@@ -1,0 +1,42 @@
+- name: Deploy traefik configuration
+  template:
+    src: traefik.toml.j2
+    dest: /srv/traefik.toml
+
+- name: Deploy stack from a compose file
+  docker_stack:
+    state: present
+    name: site
+    with_registry_auth: true
+    resolve_image: never
+    compose:
+      - version: '3'
+        services:
+          traefik:
+            image: traefik:{{traefik_version}}
+            ports:
+              - "80:80"
+            volumes: 
+              - /var/run/docker.sock:/var/run/docker.sock:ro
+              - /srv/traefik.toml:/traefik.toml
+
+            networks:
+              - traefiknet
+
+          datadog:
+            image: datadog/agent:7
+            environment:
+              - DD_API_KEY=${datadog_api_key}
+              - DD_LOGS_ENABLED=true
+              - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+              - DD_AC_EXCLUDE="name:adent"
+            volumes:
+              - /var/run/docker.sock:/var/run/docker.sock
+              - /proc/:/host/proc/:ro
+              - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+            deploy:
+              mode: global
+
+        networks:
+          traefiknet:
+            external: true

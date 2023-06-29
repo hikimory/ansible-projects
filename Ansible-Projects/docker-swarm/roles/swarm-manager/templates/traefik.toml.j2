@@ -1,0 +1,11 @@
+defaultEntryPoints = ["http"]
+
+[entryPoints]
+    [entryPoints.http]
+    adress = ":80"
+
+[docker]
+exposedByDefault = false
+swarmMode = true
+watch = true
+domain = "{{domain}}"

@@ -1,0 +1,23 @@
+- name: Deploy stack from a compose file
+  docker_stack:
+    state: present
+    name: site
+    with_registry_auth: true
+    resolve_image: never
+    compose:
+      - version: '3'
+        services:
+          hello:
+            image: nginxdemos/hello
+            networks:
+              - traefiknet
+            deploy:
+              labels:
+                - "traefik.enable=true"
+                - "traefik.port=80"
+                - "traefik.frontend.rule=Host:{{domain}}; PathPrefixStrip:/api/v2/hello-world"
+                - "traefik.docker.network=traefiknet"
+        
+        networks:
+          traefiknet:
+            external: true
