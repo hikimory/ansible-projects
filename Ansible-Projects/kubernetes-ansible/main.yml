@@ -1,0 +1,4 @@
+---
+- import_playbook: ./services/prepare-hosts.yml
+- import_playbook: ./services/install-master-node.yml
+- import_playbook: ./services/install-workers-node.yml

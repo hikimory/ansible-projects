@@ -1,0 +1,149 @@
+---
+- name: Install pre-packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+      - python3-pip
+      - net-tools
+      - tmux
+      - vim
+      - git
+      - bash-completion
+      - rsyslog
+      - chrony
+    state: present
+
+- name: Enable NTP server
+  service:
+    name: chronyd
+    state: started
+    enabled: yes
+
+- name: Enable rsyslog
+  service:
+    name: rsyslog
+    state: started
+    enabled: yes
+
+- name: Check is swap enable
+  shell: swapon
+  register: swap_present
+  changed_when: false
+  ignore_errors: true
+
+- name: If swap is enabled - disable it
+  shell: swapoff -a
+  when: swap_present.stdout != ""
+
+- name: Remove Swap entry from /etc/fstab.
+  lineinfile:
+    dest: /etc/fstab
+    regexp: swap
+    state: absent
+
+- name: Load br_netfilter module
+  modprobe:
+    name: br_netfilter
+
+- name: Load overlay module
+  modprobe:
+    name: overlay
+
+- name: Load module permanet
+  copy:
+    src: containerd.conf
+    dest: /etc/modules-load.d/containerd.conf
+
+- name: Configure sysctl params for Kubernetes
+  copy:
+    src: kubernetes.conf
+    dest: /etc/sysctl.d/containerd.conf
+
+- name: Apply sysctl params without reboot.
+  command: sysctl --system
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker apt repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    state: present
+
+- name: Add Kubernetes apt-key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add Kubernetes apt repository
+  apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+
+- name: Install containerd.
+  apt: 
+    name:
+      - containerd.io
+    state: present
+
+- name: Configure containerd.
+  file:
+    path: /etc/containerd
+    state: directory
+
+- name: Configure containerd.
+  shell: /usr/bin/containerd config default > /etc/containerd/config.toml
+
+- name: Enable containerd service, and start it.
+  systemd: 
+    name: containerd
+    state: restarted
+    enabled: yes
+    daemon-reload: yes
+
+- name: Update repository index (Debian)
+  tags: always
+  apt:
+    update_cache: yes
+  changed_when: false
+  
+- name: Install kubernetes packages
+  apt:
+    name:
+      - kubectl={{ kube_version }}-00
+      - kubelet={{ kube_version }}-00
+      - kubeadm={{ kube_version }}-00
+    state: latest
+
+- name: Enable service kubelet, and enable persistently
+  service: 
+    name: kubelet
+    enabled: yes
+
+- name: Configure kubectl command auto-completion.
+  lineinfile:
+    dest: /root/.bashrc
+    line: 'source <(kubectl completion bash)'
+    insertafter: EOF
+
+- name: Install crictl
+  unarchive:
+    src: https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ cri_version }}/crictl-{{ cri_version }}-linux-amd64.tar.gz
+    dest: /usr/local/bin
+    remote_src: yes
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Set crictl.yaml
+  copy: 
+    src: crictl.yaml
+    dest: /etc/crictl.yaml
+    owner: root
+    mode: 644

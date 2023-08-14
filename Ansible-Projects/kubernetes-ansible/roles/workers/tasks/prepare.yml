@@ -1,0 +1,7 @@
+---
+- name: Get the token for joining the nodes with Kuberentes master.
+  shell: kubeadm token create --print-join-command
+  register: kubernetes_join_command
+
+- debug:
+    msg: "{{ kubernetes_join_command.stdout }}"

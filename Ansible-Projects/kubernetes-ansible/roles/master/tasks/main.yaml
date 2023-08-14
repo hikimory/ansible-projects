@@ -1,0 +1,53 @@
+---
+- name: Check if kubeadm has already run
+  stat:
+    path: "/etc/kubernetes/pki/ca.key"
+  register: kubeadm_ca
+
+- meta: end_play
+  when: kubeadm_ca.stat.exists
+
+- name: Create /etc/kubernetes directory
+  file:
+    path: /etc/kubernetes
+    state: directory
+
+- name: Intilizing Kubernetes Cluster
+  command: kubeadm init --pod-network-cidr "{{ pod_network_cidr }}" --apiserver-advertise-address "{{ k8s_master_ip }}" --cri-socket "{{ cri_socket }}"
+  run_once: true
+  delegate_to: "{{ k8s_master_ip }}"
+
+- name: Add directory for config file
+  file:
+    path: /root/.kube
+    state: directory
+
+- name: Add link for config file
+  file:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    state: link
+
+- name: Remove the cache directory.
+  file:
+    path: /root/.kube/cache
+    state: absent
+
+- name: Wait for coredns started
+  shell:
+    cmd: "kubectl -n kube-system get svc kube-dns -o jsonpath='{.spec.clusterIP}'"
+  changed_when: false
+  check_mode: false
+  register: result
+  until: result.rc == 0
+  retries: 10 
+  delay: 30
+
+- name: Install Calico
+  shell: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/calico.yaml
+
+- name: Kubelet enable
+  service:
+    name: kubelet
+    state: started
+    enabled: yes

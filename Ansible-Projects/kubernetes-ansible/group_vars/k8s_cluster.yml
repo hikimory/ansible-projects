@@ -1,0 +1,18 @@
+# Kubernetes parameters
+
+# Versions: 1.24.[0-15], 1.25.[0-11], 1.26.[0-6], 1.27.[0-3]
+kube_version: "1.26.0"
+
+kube_domain_name: cluster.local
+k8s_master_ip: "192.168.0.100"
+pod_network_cidr: "192.168.0.0/16"
+service_cidr: "10.233.0.0/18"
+
+# It is advisable not to change.
+kubectl_config: /etc/kubernetes/admin.conf
+kubeadmin_config: /etc/kubernetes/kubeadm.conf
+
+calico_version: v3.26.1
+
+cri_version: v1.26.0
+cri_socket: unix:///run/containerd/containerd.sock
